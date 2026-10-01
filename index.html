@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3F4F8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0A0C11" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Хронометр">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Хронометр недели</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: phone-first app shell — large page title, soft cards, 24-hour dial on «Сейчас», bottom tab bar. */
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunk:#ECEEF3; --fg:#14161C; --muted:#6A7080; --line:rgba(20,22,28,.08);
+  --accent:#0E8A92; --accent-soft:rgba(14,138,146,.12); --warn:#C2571A; --good:#18875A;
+  --btn:#14161C; --on-btn:#FFFFFF; --on-cat:#FFFFFF; --bar:rgba(255,255,255,.78);
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 30px -12px rgba(16,24,40,.12);
+  --c0:#5965E0; --c1:#2388C9; --c2:#E8891C; --c3:#1FA868; --c4:#A855D6; --c5:#7E8796; --c6:#DB5A86; --c7:#14ACA8; --c8:#A29B88;
+  --f-ui:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --r:22px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A0C11; --surface:#141821; --sunk:#1C2130; --fg:#F2F4F9; --muted:#8C93A5; --line:rgba(255,255,255,.07);
+  --accent:#43D1D6; --accent-soft:rgba(67,209,214,.14); --warn:#F5A066; --good:#53D394;
+  --btn:#F2F4F9; --on-btn:#0A0C11; --on-cat:#0A0C11; --bar:rgba(20,24,33,.78);
+  --shadow:0 0 0 1px rgba(255,255,255,.05);
+  --c0:#8C95FF; --c1:#5BB4F0; --c2:#FFAE52; --c3:#4FD893; --c4:#CF8BF5; --c5:#A3ACBB; --c6:#F38BB0; --c7:#4FD6D1; --c8:#C7C0AD;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A0C11; --surface:#141821; --sunk:#1C2130; --fg:#F2F4F9; --muted:#8C93A5; --line:rgba(255,255,255,.07);
+  --accent:#43D1D6; --accent-soft:rgba(67,209,214,.14); --warn:#F5A066; --good:#53D394;
+  --btn:#F2F4F9; --on-btn:#0A0C11; --on-cat:#0A0C11; --bar:rgba(20,24,33,.78);
+  --shadow:0 0 0 1px rgba(255,255,255,.05);
+  --c0:#8C95FF; --c1:#5BB4F0; --c2:#FFAE52; --c3:#4FD893; --c4:#CF8BF5; --c5:#A3ACBB; --c6:#F38BB0; --c7:#4FD6D1; --c8:#C7C0AD;
+  color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:8px calc(110px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+section{display:flex;flex-direction:column;gap:14px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:10px}
+.top h1{font:700 32px/1.1 var(--f-ui);letter-spacing:-.03em;margin:0}
+.top .clock{font:500 15px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted);padding-bottom:4px}
+h2{font:600 17px/1.3 var(--f-ui);letter-spacing:-.01em;margin:0}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0;box-shadow:var(--shadow)}
+.banner{background:var(--accent-soft);color:var(--fg);border-radius:16px;padding:12px 14px;font-size:14px}
+button:focus-visible,select:focus-visible,input:focus-visible,label.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;background:var(--sunk);color:var(--fg);font:600 14px var(--f-ui);padding:11px 16px;border-radius:999px;cursor:pointer;transition:transform .12s ease,filter .12s ease,background .12s}
+.btn:active{transform:scale(.97)}
+.btn:hover{filter:brightness(.97)}
+.btn.primary{background:var(--btn);color:var(--on-btn)}
+.btn.ghost{background:transparent;color:var(--muted);padding-inline:10px}
+.btn.icon{width:42px;height:42px;padding:0;font-size:18px}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* bottom tab bar */
+.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;gap:4px;padding:6px;border-radius:999px;background:var(--bar);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);box-shadow:0 10px 30px -8px rgba(0,0,0,.25),0 0 0 1px var(--line)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:transparent;color:var(--muted);font:600 11px var(--f-ui);padding:8px 18px;border-radius:999px;cursor:pointer;min-width:84px;transition:background .15s,color .15s}
+.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected="true"]{background:var(--btn);color:var(--on-btn)}
+
+/* NOW: dial */
+.hero{align-items:center;padding-top:22px}
+.dial{position:relative;width:min(300px,78vw);aspect-ratio:1;max-width:100%}
+.dial svg{width:100%;height:100%;display:block;overflow:visible}
+.dial .hl{fill:var(--muted);font:500 10px var(--f-mono)}
+.dial-center{position:absolute;inset:22%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.now-name{font:700 26px/1.15 var(--f-ui);letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.now-name i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.now-time{font:500 22px var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.now-since{font-size:13px;color:var(--muted)}
+.hint{width:100%;display:flex;flex-direction:column;gap:12px}
+.plancard{display:flex;align-items:center;gap:12px;background:var(--sunk);border-radius:16px;padding:12px 14px}
+.plancard .dot{width:36px;height:36px;border-radius:12px;flex:none;display:grid;place-items:center}
+.plancard .dot i{width:12px;height:12px;border-radius:50%;background:var(--on-cat)}
+.plancard .txt{display:flex;flex-direction:column;min-width:0;flex:1}
+.plancard .txt b{font-weight:600}
+.plancard .txt span{font-size:13px;color:var(--muted);white-space:nowrap}
+.ok{font-size:12px;font-weight:600;color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent);padding:4px 10px;border-radius:999px;white-space:nowrap}
+.hint .actions .btn{flex:1 1 auto}
+.next{font-size:13px;color:var(--muted);text-align:center}
+
+/* category tiles */
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cat{--t:color-mix(in srgb,var(--cc) 13%,var(--surface));display:flex;flex-direction:column;align-items:flex-start;gap:10px;border:0;background:var(--t);color:var(--fg);border-radius:18px;padding:14px 12px;font:600 14px var(--f-ui);cursor:pointer;text-align:left;transition:transform .12s ease,background .15s}
+.cat:active{transform:scale(.96)}
+.cat .swatch{width:12px;height:12px;border-radius:50%}
+.cat.on{background:var(--cc);color:var(--on-cat);box-shadow:0 8px 20px -8px var(--cc)}
+.cat.on .swatch{background:var(--on-cat)!important}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none}
+
+/* DAY */
+.daynav{display:flex;align-items:center;gap:8px}
+.daynav .title{font:600 17px var(--f-ui);flex:1;text-align:center;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl{display:grid;grid-template-columns:42px 1fr;gap:8px 10px;align-items:center}
+.tl .lab{font-size:12px;color:var(--muted);font-weight:600}
+.bar{position:relative;height:34px;background:var(--sunk);border-radius:10px;overflow:hidden}
+.seg{position:absolute;top:0;bottom:0;box-shadow:inset -1.5px 0 0 var(--surface)}
+.seg.plan{opacity:.45}
+.seg.fromplan{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(255,255,255,.3) 5px 7px)}
+.nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);border-radius:2px}
+.ticks{position:relative;height:16px;font:11px var(--f-mono);color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}.ticks span:last-child{transform:translateX(-100%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0}
+.list{display:flex;flex-direction:column;gap:4px}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:8px 4px;border-radius:14px;font-size:14px}
+.item .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center}
+.item .ic i{width:10px;height:10px;border-radius:50%}
+.item .mid{display:flex;flex-direction:column;min-width:0}
+.item .mid b{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .mid span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tag{font-size:11px;font-weight:600;color:var(--muted);background:var(--sunk);border-radius:999px;padding:2px 8px;white-space:nowrap;margin-left:6px;font-family:var(--f-ui)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 6px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th{font-weight:600;color:var(--muted);font-size:12px}
+th:first-child,td:first-child{text-align:left}
+td .swatch{width:9px;height:9px;margin-right:8px;vertical-align:0}
+.scroll{overflow-x:auto}
+.d-pos{color:var(--warn)}.d-neg{color:var(--accent)}
+.empty{color:var(--muted);font-size:14px;padding:4px 0}
+
+/* STATS */
+.seg-ctl{display:flex;gap:4px;background:var(--sunk);border-radius:999px;padding:4px}
+.seg-ctl button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:8px 10px;font:600 13px var(--f-ui);cursor:pointer}
+.seg-ctl button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.tile{background:var(--sunk);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:2px}
+.tiles .tile:last-child:nth-child(odd){grid-column:1/-1}
+.tile .v{font:700 26px/1.1 var(--f-ui);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .k{font-size:13px;font-weight:500}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.warn{background:color-mix(in srgb,var(--warn) 12%,var(--surface))}.tile.warn .v{color:var(--warn)}
+.tile.good{background:color-mix(in srgb,var(--good) 11%,var(--surface))}.tile.good .v{color:var(--good)}
+.insights{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.insights li{display:flex;gap:10px}
+.insights li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:8px}
+svg text{fill:var(--muted);font:11px var(--f-mono)}
+
+/* sheet */
+.ov{position:fixed;inset:0;background:rgba(5,8,12,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10;animation:fade .2s ease}
+.modal{background:var(--surface);border-radius:26px 26px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom,0px));width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px;animation:up .25s cubic-bezier(.2,.8,.2,1)}
+.modal::before{content:"";width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center;margin-top:-10px}
+.modal label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--muted)}
+.modal select,.modal input:not([type=checkbox]){font:16px var(--f-ui);padding:12px 14px;border:0;border-radius:14px;background:var(--sunk);color:var(--fg);width:100%}
+.modal input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:var(--warn);font-size:13px}
+@media (min-width:640px){.ov{align-items:center}.modal{border-radius:26px}.modal::before{display:none}}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head><body>
+<div class="wrap">
+  <header class="top"><h1 id="ptitle">Сейчас</h1><span class="clock" id="clk">--:--</span></header>
+  <div id="banner" class="banner" hidden></div>
+
+  <section id="v-now" hidden>
+    <div class="panel hero">
+      <span class="eyebrow" id="clkd"></span>
+      <div class="dial"><svg id="dial" viewBox="0 0 300 300" aria-label="Сутки: план и факт"></svg><div class="dial-center" id="cur"></div></div>
+      <div class="hint" id="hint"></div>
+    </div>
+    <div class="panel">
+      <h2>Чем занят сейчас</h2>
+      <div class="cats" id="cats"></div>
+      <div class="actions" style="justify-content:center"><button class="btn ghost" id="stop">Остановить отсчёт</button></div>
+    </div>
+  </section>
+
+  <section id="v-day" hidden>
+    <div class="panel">
+      <div class="daynav">
+        <button class="btn icon" id="prev" aria-label="Предыдущий день">‹</button>
+        <span class="title" id="dtitle"></span>
+        <button class="btn icon" id="next" aria-label="Следующий день">›</button>
+      </div>
+      <div class="tl">
+        <span class="lab">План</span><div class="bar" id="barPlan"></div>
+        <span class="lab">Факт</span><div class="bar" id="barFact"></div>
+        <span></span><div class="ticks" id="ticks"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="actions">
+        <button class="btn" id="fill">Заполнить по плану</button>
+        <button class="btn" id="add">＋ Запись</button>
+        <button class="btn primary" id="confirm">Подтвердить день</button>
+        <button class="btn ghost" id="today">К сегодня</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Записи</h2>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="panel">
+      <h2>Итог дня, часы</h2>
+      <div class="scroll"><table id="dayTbl"></table></div>
+    </div>
+  </section>
+
+  <section id="v-stats" hidden>
+    <div class="panel">
+      <div class="seg-ctl" id="period">
+        <button data-n="7">7 дней</button><button data-n="14">14 дней</button><button data-n="30">30 дней</button>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+    <div class="panel">
+      <h2>По дням</h2>
+      <div class="scroll" id="chart"></div>
+      <div class="legend" id="legend2"></div>
+    </div>
+    <div class="panel">
+      <h2>Факт и план</h2>
+      <div class="scroll"><table id="sumTbl"></table></div>
+    </div>
+    <div class="panel">
+      <h2>Что видно из данных</h2>
+      <ul class="insights" id="ins"></ul>
+    </div>
+    <div class="panel">
+      <h2>Данные</h2>
+      <div class="muted" style="font-size:14px">Всё хранится только в этом браузере на этом устройстве. Раз в неделю сохраняйте резервную копию — при очистке данных браузера история пропадёт.</div>
+      <div class="actions">
+        <button class="btn primary" id="expJson">Резервная копия</button>
+        <button class="btn" id="expCsv">Таблица CSV</button>
+        <label class="btn" for="impFile">Восстановить</label>
+        <input type="file" id="impFile" accept=".json,application/json" hidden>
+      </div>
+      <div class="actions"><button class="btn" id="copyAI">Скопировать запрос для разбора в Claude</button></div>
+      <div class="muted" id="dataMsg" style="font-size:13px"></div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button id="tab-now" role="tab" data-tab="now"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Сейчас</button>
+  <button id="tab-day" role="tab" data-tab="day"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>День</button>
+  <button id="tab-stats" role="tab" data-tab="stats"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Аналитика</button>
+</nav>
+<div id="modalRoot"></div>
+
+<script>
+(function(){
+const CATS=["Сон","Работа","Такси","Торговля","Зал","Дорога","Быт","Отдых","Другое"];
+const CI=Object.fromEntries(CATS.map((c,i)=>[c,i]));
+const col=c=>`var(--c${CI[c]??8})`;
+// Шаблон недели (часы). Ключ — getDay(): 1=Пн … 0=Вс
+const P={
+1:[[0,6,"Сон"],[6,6.5,"Быт"],[6.5,8,"Зал"],[8,9,"Дорога"],[9,19,"Работа"],[19,20,"Дорога"],[20,20.5,"Быт"],[20.5,24,"Торговля"]],
+2:[[0,7,"Сон"],[7,8,"Торговля"],[8,9,"Дорога"],[9,19,"Работа"],[19,20,"Дорога"],[20,20.5,"Быт"],[20.5,23.5,"Торговля"],[23.5,24,"Сон"]],
+3:[[0,6,"Сон"],[6,6.5,"Быт"],[6.5,8,"Зал"],[8,9,"Дорога"],[9,19,"Работа"],[19,20,"Дорога"],[20,20.5,"Быт"],[20.5,24,"Торговля"]],
+4:[[0,7,"Сон"],[7,8,"Торговля"],[8,9,"Дорога"],[9,19,"Работа"],[19,19.5,"Быт"],[19.5,24,"Такси"]],
+5:[[0,0.5,"Такси"],[0.5,1,"Быт"],[1,7.5,"Сон"],[7.5,8,"Быт"],[8,9,"Дорога"],[9,19,"Работа"],[19,20,"Дорога"],[20,20.5,"Быт"],[20.5,21,"Отдых"],[21,24,"Такси"]],
+6:[[0,5.5,"Такси"],[5.5,6,"Быт"],[6,13,"Сон"],[13,14,"Быт"],[14,24,"Такси"]],
+0:[[0,0.5,"Быт"],[0.5,7.5,"Сон"],[7.5,8,"Быт"],[8,18,"Такси"],[18,19,"Быт"],[19,20.5,"Зал"],[20.5,22.5,"Отдых"],[22.5,24,"Сон"]]};
+const WD=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+const WDs=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+days={}, cur=null, tab="now", viewK=null, period=7, q=Promise.resolve();
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const dk=d=>{d=new Date(d);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const pk=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
+const addD=(k,n)=>{const d=pk(k);d.setDate(d.getDate()+n);return dk(d)};
+const mOf=t=>{const d=new Date(t);return d.getHours()*60+d.getMinutes()};
+const hm=m=>`${pad(Math.floor(m/60)%25)}:${pad(m%60)}`;
+const dur=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h} ч${r?` ${r} мин`:""}`:`${r} мин`};
+const h1=m=>(m/60).toLocaleString("ru-RU",{maximumFractionDigits:1,minimumFractionDigits:m%60?1:0});
+const planFor=k=>(P[pk(k).getDay()]||[]).map(([a,b,c])=>({c,s:a*60,e:b*60}));
+const todayK=()=>dk(Date.now());
+const esc=s=>String(s).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+
+function norm(l){
+  l=l.filter(x=>x.e>x.s).sort((a,b)=>a.s-b.s);const o=[];
+  for(const x of l){const p=o[o.length-1];if(p&&p.c===x.c&&p.src===x.src&&p.e>=x.s){p.e=Math.max(p.e,x.e)}else o.push({...x})}
+  return o;
+}
+function insertSeg(list,seg){
+  const o=[];
+  for(const x of list){
+    if(x.e<=seg.s||x.s>=seg.e){o.push({...x});continue}
+    if(x.s<seg.s)o.push({...x,e:seg.s});
+    if(x.e>seg.e)o.push({...x,s:seg.e});
+  }
+  o.push(seg);return norm(o);
+}
+function splitRange(t0,t1){
+  const r=[];let a=t0;
+  while(a<t1){const d=new Date(a);const mid=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1).getTime();
+    const b=Math.min(t1,mid);r.push({k:dk(d),s:mOf(a),e:b===mid?1440:mOf(b)});a=b}
+  return r;
+}
+const entriesOf=k=>(days[k]?.entries||[]).map(x=>({...x}));
+function live(k){
+  let l=entriesOf(k);
+  if(cur&&cur.c){for(const p of splitRange(cur.t,Date.now()))if(p.k===k)l=insertSeg(l,{c:cur.c,s:p.s,e:p.e,src:"live"})}
+  return l;
+}
+
+function enqueue(fn){q=q.then(fn).catch(e=>{showBanner(e&&e.code==="quota_exceeded"?"Хранилище заполнено — удалите старые дни.":"Не удалось сохранить изменение. Проверьте связь и повторите.")});return q}
+function saveDay(k,patch){
+  const d={date:k,entries:[],confirmed:false,...(days[k]?{date:k,entries:entriesOf(k),confirmed:!!days[k].confirmed}:{}),...patch};
+  days[k]=d;render();
+  persist();return Promise.resolve();
+}
+function commitRange(c,t0,t1,src){for(const p of splitRange(t0,t1))if(p.e>p.s)saveDay(p.k,{entries:insertSeg(entriesOf(p.k),{c,s:p.s,e:p.e,src})})}
+function setCur(v){cur=v;render();persist()}
+const LS="hronometr.v1";
+function persist(){try{localStorage.setItem(LS,JSON.stringify({days,cur}))}catch(e){showBanner("Не удалось сохранить: память браузера недоступна или заполнена. Сделайте резервную копию.")}}
+function loadLocal(){try{const v=JSON.parse(localStorage.getItem(LS)||"null");if(v){days=v.days||{};cur=v.cur&&v.cur.c?v.cur:null}}catch(_){}}
+function switchTo(c,start){
+  const now=Date.now();start=start??now;
+  if(cur&&cur.c){if(start<cur.t)start=cur.t;commitRange(cur.c,cur.t,start,"track")}
+  setCur(c?{c,t:start}:null);
+}
+function showBanner(t){const b=$("banner");b.textContent=t;b.hidden=!t}
+
+/* ---------- NOW ---------- */
+function planAt(k,m){return planFor(k).find(b=>b.s<=m&&m<b.e)}
+const hhmmT=t=>new Date(t).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+function clockDur(ms){const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return`${h}:${pad(m)}:${pad(x)}`}
+function arcPath(cx,r,s,e){
+  e=Math.min(e,s+1439.5);const A=m=>m/1440*2*Math.PI-Math.PI/2;
+  const a0=A(s),a1=A(e),large=(e-s)>720?1:0;
+  return`M${(cx+r*Math.cos(a0)).toFixed(2)} ${(cx+r*Math.sin(a0)).toFixed(2)} A${r} ${r} 0 ${large} 1 ${(cx+r*Math.cos(a1)).toFixed(2)} ${(cx+r*Math.sin(a1)).toFixed(2)}`;
+}
+function renderDial(k,m){
+  const C=150,rp=138,rf=118,gap=3;let s="";
+  s+=`<circle cx="${C}" cy="${C}" r="${rp}" style="fill:none;stroke:var(--sunk);stroke-width:8"/>`;
+  s+=`<circle cx="${C}" cy="${C}" r="${rf}" style="fill:none;stroke:var(--sunk);stroke-width:18"/>`;
+  for(const b of planFor(k))if(b.e-b.s>gap*2)s+=`<path d="${arcPath(C,rp,b.s+gap,b.e-gap)}" style="fill:none;stroke:${col(b.c)};stroke-width:8;stroke-linecap:round;opacity:.45"/>`;
+  for(const x of live(k))if(x.e-x.s>gap*2)s+=`<path d="${arcPath(C,rf,x.s+gap,x.e-gap)}" style="fill:none;stroke:${col(x.c)};stroke-width:18;stroke-linecap:round"/>`;
+  for(const h of[0,6,12,18]){const a=h/24*2*Math.PI-Math.PI/2,r=96;s+=`<text class="hl" x="${C+r*Math.cos(a)}" y="${C+r*Math.sin(a)+3.5}" text-anchor="middle">${pad(h)}</text>`}
+  const a=m/1440*2*Math.PI-Math.PI/2;
+  s+=`<line x1="${C+(rf-14)*Math.cos(a)}" y1="${C+(rf-14)*Math.sin(a)}" x2="${C+(rp+8)*Math.cos(a)}" y2="${C+(rp+8)*Math.sin(a)}" style="stroke:var(--fg);stroke-width:2.5;stroke-linecap:round"/>`;
+  s+=`<circle cx="${C+(rp+8)*Math.cos(a)}" cy="${C+(rp+8)*Math.sin(a)}" r="5" style="fill:var(--fg)"/>`;
+  $("dial").innerHTML=s;
+}
+function renderNow(){
+  const now=Date.now(),k=dk(now),m=mOf(now),c=cur&&cur.c;
+  renderDial(k,m);
+  $("cur").innerHTML=c
+    ?`<span class="eyebrow">Сейчас</span><span class="now-name"><i style="background:${col(c)}"></i>${esc(c)}</span><span class="now-time" id="curDur">${clockDur(now-cur.t)}</span><span class="now-since">с ${hhmmT(cur.t)}</span>`
+    :`<span class="eyebrow">Сейчас</span><span class="now-name muted">Не отмечено</span><span class="now-since">выберите занятие ниже</span>`;
+  const p=planAt(k,m);let html="";
+  if(p){
+    html+=`<div class="plancard"><span class="dot" style="background:${col(p.c)}"><i></i></span><span class="txt"><b>${esc(p.c)}</b><span>по плану ${hm(p.s)}–${hm(p.e)}</span></span>${c===p.c?'<span class="ok">✓ по плану</span>':""}</div>`;
+    const acts=[];
+    if(c!==p.c){
+      const ps=pk(k).getTime()+p.s*60000;
+      acts.push(`<button class="btn primary" data-go="${esc(p.c)}">Подтвердить с сейчас</button>`);
+      if(ps<now-60000&&(!cur||!cur.c||ps>cur.t))acts.push(`<button class="btn" data-go="${esc(p.c)}" data-at="${ps}">с ${hm(p.s)}, как в плане</button>`);
+    }
+    if(c)acts.push(`<button class="btn" data-curedit>Изменить время</button>`);
+    if(acts.length)html+=`<div class="actions">${acts.join("")}</div>`;
+    const inToday=planFor(k).find(b=>b.s>m);const nx=inToday||planFor(addD(k,1))[0];
+    if(nx)html+=`<div class="next">Дальше: ${esc(nx.c)} в ${hm(nx.s)}${inToday?"":" завтра"}</div>`;
+  }else if(c)html+=`<div class="actions"><button class="btn" data-curedit>Изменить время</button></div>`;
+  $("hint").innerHTML=html;
+  $("cats").innerHTML=CATS.map(x=>`<button class="cat${x===c?" on":""}" style="--cc:${col(x)}" data-go="${esc(x)}"><span class="swatch" style="background:${col(x)}"></span>${esc(x)}</button>`).join("");
+  $("stop").disabled=!c;
+}
+function tick(){
+  const d=new Date();
+  $("clk").textContent=d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  $("clkd").textContent=`${WD[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`;
+  const cd=$("curDur");if(cd&&cur)cd.textContent=clockDur(Date.now()-cur.t);
+}
+
+/* ---------- DAY ---------- */
+function segsHtml(l,cls){return l.map(x=>`<div class="seg ${cls}${x.src==="plan"?" fromplan":""}" title="${esc(x.c)} ${hm(x.s)}–${hm(x.e)}" style="left:${x.s/14.4}%;width:${(x.e-x.s)/14.4}%;background:${col(x.c)}"></div>`).join("")}
+function renderDay(){
+  const k=viewK,t=todayK(),d=pk(k);
+  $("dtitle").textContent=`${k===t?"Сегодня":k===addD(t,-1)?"Вчера":WDs[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`;
+  const plan=planFor(k),fact=live(k);
+  const nowM=k===t?mOf(Date.now()):null;
+  const nl=nowM!=null?`<div class="nowline" style="left:${nowM/14.4}%"></div>`:"";
+  $("barPlan").innerHTML=segsHtml(plan,"plan")+nl;
+  $("barFact").innerHTML=segsHtml(fact,"")+nl;
+  $("ticks").innerHTML=[0,3,6,9,12,15,18,21,24].map(h=>`<span style="left:${h/24*100}%">${pad(h)}</span>`).join("");
+  const used=[...new Set([...plan,...fact].map(x=>x.c))];
+  $("legend").innerHTML=used.map(c=>`<span><i style="background:${col(c)}"></i>${esc(c)}</span>`).join("")+`<span class="muted">штриховка — заполнено по плану</span>`;
+  const conf=!!days[k]?.confirmed;
+  $("confirm").textContent=conf?"✓ Подтверждён":"Подтвердить день";
+  $("confirm").className="btn"+(conf?"":" primary");
+  $("next").disabled=k>=t;$("fill").disabled=k>t;
+  $("list").innerHTML=fact.length?fact.map(x=>`<div class="item"><span class="ic" style="background:color-mix(in srgb,${col(x.c)} 16%,transparent)"><i style="background:${col(x.c)}"></i></span><span class="mid"><b>${esc(x.c)}${x.src==="plan"?'<span class="tag">план</span>':""}${x.src==="live"?'<span class="tag">идёт</span>':""}</b><span>${hm(x.s)}–${x.src==="live"?"сейчас":hm(x.e)} · ${dur(Math.min(x.e,1440)-x.s)}${x.note?` · ${esc(x.note)}`:""}</span></span>${x.src==="live"?'<button class="btn ghost" data-curedit>Изменить</button>':`<button class="btn ghost" data-edit="${x.s}" data-c="${esc(x.c)}">Изменить</button>`}</div>`).join("")
+    :`<div class="empty">За этот день записей нет. Нажмите «Заполнить по плану», если день прошёл как запланировано, или добавьте записи вручную.</div>`;
+  const pm=tot(plan,nowM),fm=tot(fact);
+  const rows=CATS.filter(c=>pm[c]||fm[c]);
+  $("dayTbl").innerHTML=`<tr><th>Занятие</th><th>Факт</th><th>План${nowM!=null?" к сейчас":""}</th><th>Разница</th></tr>`+
+    rows.map(c=>{const df=(fm[c]||0)-(pm[c]||0);return`<tr><td><span class="swatch" style="background:${col(c)}"></span>${esc(c)}</td><td>${h1(fm[c]||0)}</td><td>${h1(pm[c]||0)}</td><td class="${df>0?"d-pos":df<0?"d-neg":""}">${df?(df>0?"+":"−")+h1(Math.abs(df)):"—"}</td></tr>`}).join("");
+}
+function tot(l,limit){const o={};for(const x of l){const e=limit!=null?Math.min(x.e,limit):x.e;if(e>x.s)o[x.c]=(o[x.c]||0)+e-x.s}return o}
+function fillGaps(k){
+  const t=todayK();const lim=k===t?mOf(Date.now()):1440;
+  let base=entriesOf(k);const cov=live(k);
+  const free=[];let p=0;for(const x of cov){if(x.s>p)free.push([p,x.s]);p=Math.max(p,x.e)}if(p<1440)free.push([p,1440]);
+  for(const b of planFor(k))for(const[a,z]of free){const s=Math.max(a,b.s),e=Math.min(z,b.e,lim);if(e>s)base=insertSeg(base,{c:b.c,s,e,src:"plan"})}
+  saveDay(k,{entries:base});
+}
+
+/* ---------- MODAL ---------- */
+function openEdit(k,idx){
+  const l=entriesOf(k);const x=idx!=null?l[idx]:{c:"Работа",s:9*60,e:10*60,note:""};
+  $("modalRoot").innerHTML=`<div class="ov" id="ov"><form class="modal" id="mf">
+    <h2>${idx!=null?"Изменить запись":"Новая запись"}</h2>
+    <label>Занятие<select id="m-c">${CATS.map(c=>`<option${c===x.c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>
+    <div class="two"><label>С<input type="time" id="m-s" value="${hm(x.s)}" required></label><label>До<input type="time" id="m-e" value="${x.e>=1440?"00:00":hm(x.e)}" required></label></div>
+    <label style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="m-nd" style="width:auto"> Закончилось на следующий день</label>
+    <label>Заметка<input id="m-n" maxlength="120" value="${esc(x.note||"")}" placeholder="необязательно"></label>
+    <div class="err" id="m-err"></div>
+    <div class="actions">${idx!=null?`<button type="button" class="btn ghost" id="m-del">Удалить</button>`:""}<span style="flex:1"></span><button type="button" class="btn" id="m-x">Отмена</button><button class="btn primary">Сохранить</button></div>
+  </form></div>`;
+  const close=()=>{$("modalRoot").innerHTML=""};
+  $("m-x").onclick=close;$("ov").onclick=e=>{if(e.target.id==="ov")close()};
+  if($("m-del"))$("m-del").onclick=()=>{l.splice(idx,1);saveDay(k,{entries:norm(l)});close()};
+  $("mf").onsubmit=e=>{e.preventDefault();
+    const tm=v=>{const[h,m]=v.split(":").map(Number);return h*60+m};
+    const s=tm($("m-s").value);let en=tm($("m-e").value);if(en===0)en=1440;
+    const nd=$("m-nd").checked;if(nd&&en===1440)en=0;
+    if(!nd&&en<=s){$("m-err").textContent="Конец раньше начала. Если занятие перешло через полночь, отметьте «Закончилось на следующий день».";return}
+    if(nd&&en>=s){$("m-err").textContent="Для перехода через полночь конец должен быть раньше начала по часам (например, 21:00 → 05:30).";return}
+    let base=l;if(idx!=null)base=l.filter((_,i)=>i!==idx);
+    const n=$("m-n").value.trim(),c=$("m-c").value,extra=n?{note:n}:{};
+    saveDay(k,{entries:insertSeg(base,{c,s,e:nd?1440:en,src:"manual",...extra})});
+    if(nd&&en>0){const k2=addD(k,1);saveDay(k2,{entries:insertSeg(entriesOf(k2),{c,s:0,e:en,src:"manual",...extra})})}
+    close();
+  };
+}
+
+function openCur(){
+  if(!cur||!cur.c)return;
+  const st=new Date(cur.t),sameDay=dk(st)===todayK();
+  $("modalRoot").innerHTML=`<div class="ov" id="ov"><form class="modal" id="mf">
+    <h2>Текущее занятие</h2>
+    <label>Занятие<select id="c-c">${CATS.map(c=>`<option${c===cur.c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>
+    <div class="two"><label>Начало<input type="time" id="c-s" value="${hm(mOf(cur.t))}" required></label>
+    <label>День начала<select id="c-d"><option value="0"${sameDay?" selected":""}>сегодня</option><option value="1"${dk(st)===addD(todayK(),-1)?" selected":""}>вчера</option></select></label></div>
+    <label>Завершить в <input type="time" id="c-e" placeholder="пусто — идёт дальше"></label>
+    <div class="muted" style="font-size:13px">Оставьте «Завершить в» пустым, если занятие ещё идёт. Если начало сдвинуть позже, предыдущее занятие продлится до нового начала.</div>
+    <div class="err" id="c-err"></div>
+    <div class="actions"><span style="flex:1"></span><button type="button" class="btn" id="c-x">Отмена</button><button class="btn primary">Сохранить</button></div>
+  </form></div>`;
+  const close=()=>{$("modalRoot").innerHTML=""};
+  $("c-x").onclick=close;$("ov").onclick=e=>{if(e.target.id==="ov")close()};
+  $("mf").onsubmit=e=>{e.preventDefault();
+    const now=Date.now(),tm=v=>{const[h,m]=v.split(":").map(Number);return h*60+m};
+    const base=pk(addD(todayK(),-(+$("c-d").value))).getTime();
+    const t0=base+tm($("c-s").value)*60000;
+    if(t0>now){$("c-err").textContent="Начало не может быть в будущем.";return}
+    let t1=null;
+    if($("c-e").value){t1=pk(todayK()).getTime()+tm($("c-e").value)*60000;if(t1<=t0)t1+=86400000;
+      if(t1>now+60000){$("c-err").textContent="Время завершения ещё не наступило.";return}}
+    const c=$("c-c").value,old=cur.t;
+    if(t0>old){ // продлить предыдущее занятие, если оно заканчивалось ровно на старом начале
+      const ok=dk(old),om=mOf(old);const prev=entriesOf(ok).find(x=>x.e===om);
+      if(prev)commitRange(prev.c,old,t0,prev.src||"track");
+    }
+    if(t1){commitRange(c,t0,t1,"track");setCur(null)}else setCur({c,t:t0});
+    close();
+  };
+}
+
+/* ---------- STATS ---------- */
+function dayStats(k){
+  const t=todayK();const lim=k===t?mOf(Date.now()):1440;
+  const fa=new Int8Array(1440).fill(-1),pa=new Int8Array(1440).fill(-1);
+  for(const x of live(k))for(let i=x.s;i<Math.min(x.e,lim);i++)fa[i]=CI[x.c]??8;
+  for(const x of planFor(k))for(let i=x.s;i<Math.min(x.e,lim);i++)pa[i]=CI[x.c];
+  const f=new Array(9).fill(0),p=new Array(9).fill(0);let tr=0,match=0;
+  for(let i=0;i<lim;i++){if(fa[i]>=0){f[fa[i]]++;tr++;if(fa[i]===pa[i])match++}if(pa[i]>=0)p[pa[i]]++}
+  return{k,lim,f,p,tr,match};
+}
+function rangeKeys(n){const t=todayK();const r=[];for(let i=n-1;i>=0;i--)r.push(addD(t,-i));return r}
+function renderStats(){
+  for(const b of $("period").children)b.setAttribute("aria-pressed",String(+b.dataset.n===period));
+  const ks=rangeKeys(period);const S=ks.map(dayStats);
+  const F=new Array(9).fill(0),Pl=new Array(9).fill(0);let el=0,tr=0,ma=0;
+  for(const s of S){s.f.forEach((v,i)=>F[i]+=v);s.p.forEach((v,i)=>Pl[i]+=v);el+=s.lim;tr+=s.tr;ma+=s.match}
+  const trackedDays=S.filter(s=>s.tr>=12*60);
+  const sleepAvg=trackedDays.length?trackedDays.reduce((a,s)=>a+s.f[0],0)/trackedDays.length:null;
+  const weeks=el/(1440*7);
+  const gymDays=S.filter(s=>s.f[4]>=30).length;
+  const tradeWk=weeks?F[3]/weeks:0;
+  const cov=el?tr/el:0,adh=tr?ma/tr:0;
+  const tile=(v,k,s,cls="")=>`<div class="tile ${cls}"><span class="v">${v}</span><span class="k">${k}</span>${s?`<span class="s">${s}</span>`:""}</div>`;
+  $("tiles").innerHTML=!tr?`<div class="empty" style="grid-column:1/-1">Пока нет отметок за этот период. Отмечайте занятия во вкладке «Сейчас» или заполняйте дни по плану во вкладке «День» — показатели появятся здесь.</div>`:
+    tile(Math.round(cov*100)+"%","времени отмечено",`${h1(tr)} из ${h1(el)} ч`,cov<.8?"warn":"good")+
+    tile(Math.round(adh*100)+"%","совпадение с планом","доля отмеченного времени",adh<.7?"warn":"")+
+    tile(sleepAvg!=null?h1(sleepAvg)+" ч":"—","сон в среднем за сутки",trackedDays.length?`по ${trackedDays.length} заполненным дням`:"нужны заполненные дни",sleepAvg==null?"":sleepAvg<420?"warn":"good")+
+    tile(h1(tradeWk)+" ч","торговля в неделю","цель 15–20 ч",tradeWk<15*60?"warn":"good")+
+    tile(String(gymDays),"тренировок",`цель ≥ ${Math.max(1,Math.round(3*weeks))} за период`,gymDays<Math.round(3*weeks)?"warn":"good");
+  // chart
+  const W=Math.max(320,ks.length*26+40),H=180,top=8,bot=24,ch=H-top-bot,bw=Math.min(18,(W-40)/ks.length-6);
+  let svg=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Часы по дням">`;
+  for(const h of[0,6,12,18,24]){const y=top+ch-(h/24)*ch;svg+=`<line x1="30" x2="${W}" y1="${y}" y2="${y}" style="stroke:var(--line)"/><text x="24" y="${y+4}" text-anchor="end">${h}</text>`}
+  S.forEach((s,i)=>{const x=36+i*((W-40)/ks.length);let y=top+ch;
+    s.f.forEach((v,ci)=>{if(!v)return;const hh=v/1440*ch;y-=hh;svg+=`<rect x="${x}" y="${y}" width="${bw}" height="${hh}" rx="2" style="fill:var(--c${ci})"/>`});
+    if(s.lim<1440){const hh=(1440-s.lim)/1440*ch;svg+=`<rect x="${x}" y="${top}" width="${bw}" height="${hh}" rx="3" style="fill:var(--sunk)"/>`}
+    const d=pk(s.k);if(ks.length<=14||i%2===0)svg+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${d.getDate()}</text>`;
+  });
+  svg+=`</svg>`;$("chart").innerHTML=svg;
+  $("legend2").innerHTML=CATS.map((c,i)=>F[i]?`<span><i style="background:${col(c)}"></i>${esc(c)}</span>`:"").join("")+`<span class="muted">пустое — не отмечено</span>`;
+  // table
+  $("sumTbl").innerHTML=`<tr><th>Занятие</th><th>Факт, ч</th><th>План, ч</th><th>Разница</th><th>В неделю</th></tr>`+
+    CATS.map((c,i)=>{if(!F[i]&&!Pl[i])return"";const df=F[i]-Pl[i];return`<tr><td><span class="swatch" style="background:${col(c)}"></span>${esc(c)}</td><td>${h1(F[i])}</td><td>${h1(Pl[i])}</td><td class="${df>0?"d-pos":df<0?"d-neg":""}">${df?(df>0?"+":"−")+h1(Math.abs(df)):"—"}</td><td>${weeks?h1(F[i]/weeks):"—"}</td></tr>`}).join("");
+  // insights
+  const ins=[];
+  if(tr){
+    if(cov<.8)ins.push(`Не отмечено ${Math.round((1-cov)*100)}% времени. Если день прошёл по плану, заполните пробелы одной кнопкой во вкладке «День» — иначе выводы будут неточными.`);
+    if(sleepAvg!=null&&sleepAvg<420)ins.push(`Сон в среднем ${h1(sleepAvg)} ч — ниже 7 ч. Самые короткие ночи: ${S.filter(s=>s.tr>=720).sort((a,b)=>a.f[0]-b.f[0]).slice(0,2).map(s=>`${WDs[pk(s.k).getDay()]} ${pk(s.k).getDate()} (${h1(s.f[0])} ч)`).join(", ")}.`);
+    if(tradeWk<15*60)ins.push(`Торговля — ${h1(tradeWk)} ч в неделю при цели 15–20 ч. По плану стоит 12 ч: в чт и пт окна почти нет.`);
+    if(gymDays<Math.round(3*weeks))ins.push(`Тренировок ${gymDays} из ${Math.round(3*weeks)} запланированных за период.`);
+    const devs=CATS.map((c,i)=>({c,d:F[i]-Pl[i]})).filter(x=>Math.abs(x.d)>=60*weeks).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,3);
+    for(const x of devs)ins.push(`${x.c}: на ${h1(Math.abs(x.d/(weeks||1)))} ч в неделю ${x.d>0?"больше":"меньше"}, чем в плане.`);
+    if(!ins.length)ins.push("Период идёт близко к плану — существенных отклонений нет.");
+  }else ins.push("Выводы появятся после первых отмеченных дней.");
+  $("ins").innerHTML=ins.map(t=>`<li>${esc(t)}</li>`).join("");
+  $("copyAI").disabled=!tr;
+}
+function buildPrompt(){
+  const ks=rangeKeys(period);const S=ks.map(dayStats).filter(s=>s.tr);
+  const daysTxt=S.map(s=>{const d=pk(s.k);const parts=CATS.map((c,i)=>s.f[i]?`${c} ${h1(s.f[i])}`:"").filter(Boolean).join(", ");
+    return`${s.k} (${WDs[d.getDay()]}): факт — ${parts}; отмечено ${h1(s.tr)} ч из ${h1(s.lim)}; совпадение с планом ${s.tr?Math.round(s.match/s.tr*100):0}%`}).join("\n");
+  const planTxt=[1,2,3,4,5,6,0].map(w=>`${WDs[w]}: `+P[w].map(([a,b,c])=>`${hm(a*60)}–${hm(b*60)} ${c}`).join(", ")).join("\n");
+  const prompt=`Ты помогаешь человеку оптимизировать время. У него основная работа 5/2 с 9 до 19, подработка в такси (чт 5 ч после работы, ночь пт→сб, сб и вс по 10 ч), торговля (цель 3–4 ч в будни, гибкое время), зал минимум 3 раза в неделю. Цели: сон не меньше 7 ч, без опасной усталости за рулём.
+
+План недели:
+${planTxt}
+
+Фактические данные за последние ${period} дней (часы):
+${daysTxt}
+
+Проанализируй отклонения факта от плана и дай 4–6 конкретных рекомендаций: что перенести, что сократить, где теряется время. Каждая рекомендация — 1–2 предложения с конкретными днями и временем. Отдельно отметь риски для сна и безопасности. Пиши по-русски, простым текстом без markdown-заголовков.`;
+  return prompt;
+}
+function dl(name,text,type){const b=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function msg(t){$("dataMsg").textContent=t}
+function exportJson(){dl(`hronometr-${todayK()}.json`,JSON.stringify({app:"hronometr",version:1,exported:new Date().toISOString(),days,cur},null,1),"application/json");msg("Копия сохранена в загрузки.")}
+function exportCsv(){
+  const rows=[["Дата","День недели","Занятие","Начало","Конец","Минут","Источник","Заметка"]];
+  for(const k of Object.keys(days).sort())for(const x of days[k].entries||[])rows.push([k,WDs[pk(k).getDay()],x.c,hm(x.s),x.e>=1440?"24:00":hm(x.e),x.e-x.s,{plan:"по плану",manual:"вручную",track:"отметка"}[x.src]||x.src||"",x.note||""]);
+  dl(`hronometr-${todayK()}.csv`,"\ufeff"+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n"),"text/csv");msg("Таблица сохранена в загрузки — открывается в Excel.");
+}
+function importJson(file){
+  const r=new FileReader();
+  r.onload=()=>{try{const v=JSON.parse(r.result);const src=v.days||v;if(typeof src!=="object")throw 0;
+    let n=0;for(const[k,d]of Object.entries(src)){if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!Array.isArray(d.entries))continue;
+      const ex=days[k];let l=ex?entriesOf(k):[];for(const x of d.entries)if(CI[x.c]!=null&&x.e>x.s)l=insertSeg(l,{...x});
+      days[k]={date:k,entries:l,confirmed:!!(d.confirmed||ex?.confirmed)};n++}
+    if(v.cur&&v.cur.c&&!cur)cur=v.cur;
+    persist();render();msg(`Восстановлено дней: ${n}.`)}catch(_){msg("Файл не похож на резервную копию Хронометра.")}};
+  r.readAsText(file);
+}
+async function copyAI(){const t=buildPrompt();try{await navigator.clipboard.writeText(t);msg("Запрос скопирован — вставьте его в чат с Claude.")}catch(_){dl(`zapros-${todayK()}.txt`,t,"text/plain");msg("Буфер обмена недоступен — запрос сохранён файлом.")}}
+
+/* ---------- RENDER / WIRING ---------- */
+const TITLES={now:"Сейчас",day:"День",stats:"Аналитика"};
+function render(){
+  $("ptitle").textContent=TITLES[tab];
+  for(const t of["now","day","stats"]){$("v-"+t).hidden=t!==tab;$("tab-"+t).setAttribute("aria-selected",String(t===tab))}
+  if(tab==="now")renderNow();else if(tab==="day")renderDay();else renderStats();
+}
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]");if(g){const at=g.dataset.at?+g.dataset.at:undefined;if(cur&&cur.c===g.dataset.go&&at==null)return;switchTo(g.dataset.go,at);return}
+  if(e.target.closest("[data-curedit]")){openCur();return}
+  const ed=e.target.closest("[data-edit]");if(ed){const l=entriesOf(viewK);const i=l.findIndex(x=>x.c===ed.dataset.c&&x.s<=+ed.dataset.edit&&+ed.dataset.edit<x.e);if(i>=0)openEdit(viewK,i);return}
+  const tb=e.target.closest("[data-tab]");if(tb){tab=tb.dataset.tab;try{localStorage.setItem("tab",tab)}catch(_){}render();return}
+  const pr=e.target.closest("#period button");if(pr){period=+pr.dataset.n;renderStats()}
+});
+$("stop").onclick=()=>switchTo(null);
+$("prev").onclick=()=>{viewK=addD(viewK,-1);renderDay()};
+$("next").onclick=()=>{if(viewK<todayK()){viewK=addD(viewK,1);renderDay()}};
+$("today").onclick=()=>{viewK=todayK();renderDay()};
+$("fill").onclick=()=>fillGaps(viewK);
+$("add").onclick=()=>openEdit(viewK,null);
+$("confirm").onclick=()=>saveDay(viewK,{confirmed:!days[viewK]?.confirmed});
+$("expJson").onclick=exportJson;$("expCsv").onclick=exportCsv;$("copyAI").onclick=copyAI;
+$("impFile").onchange=e=>{const f=e.target.files[0];if(f)importJson(f);e.target.value=""};
+window.addEventListener("storage",e=>{if(e.key===LS){loadLocal();render()}});
+
+viewK=todayK();loadLocal();
+try{const t=localStorage.getItem("tab");if(t&&["now","day","stats"].includes(t))tab=t}catch(_){}
+render();tick();setInterval(tick,1000);
+let lastMin=-1;setInterval(()=>{const m=new Date().getMinutes();if(m!==lastMin){lastMin=m;render()}},5000);
+
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+
+</body></html>
